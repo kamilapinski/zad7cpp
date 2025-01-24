@@ -8,16 +8,6 @@
 
 namespace flist {
 
-    namespace detail {
-        constexpr auto is_empty = [](auto l) {
-            return l([](auto, bool) { return false; }, true);
-        };
-
-        constexpr auto Y = [](auto f) {
-            return f(f);
-        };
-    }
-
     // funkcja stała reprezentująca listę pustą
     constexpr auto empty = []([[maybe_unused]] auto f, auto a) {
         return a;
@@ -30,24 +20,21 @@ namespace flist {
         };
     };
 
+    namespace detail {
+        
+        template <typename X, typename... Args>
+        constexpr auto build_list(X&& x, Args&&... args) {
+            if constexpr (sizeof...(args) == 0)
+                return cons(std::forward<X>(x), empty);
+            else
+                return cons(std::forward<X>(x), build_list(std::forward<Args>(args)...));
+        }
+
+    }
+
     // funkcja zwracająca listę składającą się z podanych argumentów
     constexpr auto create = [](auto... args) {
-        auto build_list = detail::Y([=](auto& self) -> decltype(auto) {
-            return [&](auto x, auto... rest) -> decltype(auto) {
-                if constexpr (sizeof...(rest) == 0) {
-                    return cons(x, empty);
-                } else {
-                    return cons(
-                        []<typename T, typename... Ts>(T x, Ts... xs) -> decltype(auto) {
-                            return x;
-                        }(x, rest...),
-                        self(rest...)
-                    );
-                }
-            };
-        });
-
-        return build_list(args...);
+        return detail::build_list(args...);
     };
 
     // funkcja zwracająca listę powstałą z elementów r; można założyć, że r jest typu spełniającego koncept std::ranges::bidirectional_range ewentualnie opakowanego w std::reference_wrapper
