@@ -17,6 +17,7 @@ namespace flist {
     constexpr auto cons = [](auto x, auto l) {
         return [x, l](auto f, auto a) {
             return l(f, f(x, a));
+            //return f(x, l(f, a));
         };
     };
 
@@ -39,15 +40,22 @@ namespace flist {
 
     // funkcja zwracająca listę powstałą z elementów r; można założyć, że r jest typu spełniającego koncept std::ranges::bidirectional_range ewentualnie opakowanego w std::reference_wrapper
     constexpr auto of_range = [](auto r) {
-        // TODO: implement
-        (void)r;
+        using value_t = std::decay_t<decltype(*r.begin())>;
+        std::vector<value_t> v(r.begin(), r.end());
+
+        return [v = std::move(v)](auto f, auto acc) {
+            for (auto const& elt : v)
+                acc = f(elt, acc);
+            return acc;
+        };
     };
 
     // funkcja zwracająca listę powstałą z połączenia list l i k
     constexpr auto concat = [](auto l, auto k) {
-        // TODO: implement
-        (void)l;
-        (void)k;
+        return [=](auto f, auto acc) {
+            auto tmp = l(f, acc);
+            return k(f, tmp);
+        };
     };
     
     // funkcja zwracająca listę z odwróconą kolejnością elementów listy l
@@ -70,22 +78,34 @@ namespace flist {
 
     // funkcja zwracająca listę powstałą z listy l w taki sposób, że każdy jej element x zamieniany jest na m(x)
     constexpr auto map = [](auto m, auto l) {
-        // TODO: implement
-        (void)m;
-        (void)l;
+        return [=](auto f, auto acc) {
+            return l([&](auto x, auto acc_next) {
+                return f(m(x), acc_next);
+            }, acc);
+        };
     };
 
     // funkcja zwracająca listę powstałą z listy l poprzez zostawienie tylko takich elementów x, które spełniają predykat p(x)
     constexpr auto filter = [](auto p, auto l) {
-        // TODO: implement
-        (void)p;
-        (void)l;
+        return [=](auto f, auto acc) {
+            return l([&](auto x, auto acc_next) {
+                if (p(x))
+                    return f(x, acc_next);
+                return acc_next;
+            }, acc);
+        };
     };
 
     // funkcja zwracająca listę powstałą z połączenia list pamiętanych w liście list l
     constexpr auto flatten = [](auto l) {
-        // TODO: implement
-        (void)l;
+        return [=](auto f, auto acc) {
+            return l(
+                [&](auto sublist, auto currentAcc) {
+                    return sublist(f, currentAcc);
+                },
+                acc
+            );
+        };
     };
     
     // funkcja zwracająca reprezentację listy l jako std::string przy założeniu, że dla każdego elementu listy x działa os << x, gdzie os jest obiektem pochodnym basic_ostream; patrz przykłady użycia
