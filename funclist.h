@@ -53,6 +53,7 @@ namespace flist {
     constexpr auto of_range = [](auto r) {
         using value_t = std::decay_t<decltype(*r.begin())>;
         std::vector<value_t> v(r.begin(), r.end());
+        std::reverse(v.begin(), v.end());
 
         return [v = std::move(v)](auto f, auto acc) {
             for (auto const& elt : v)

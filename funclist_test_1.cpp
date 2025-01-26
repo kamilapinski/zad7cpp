@@ -26,7 +26,7 @@ int main()
 {
     auto add = []<typename A>(auto x, A a) -> A {return x + a;};
     auto l = flist::cons(1, flist::empty);
-    auto l1 = flist::cons(1.0, flist::cons(2.5, flist::empty));
+    auto l1 = flist::cons(1, flist::cons(2.5, flist::empty));
     std::cout << flist::as_string(l1) << std::endl;
     std::cout << flist::as_string(flist::rev(l1)) << std::endl;
     assert(flist::as_string(flist::rev(l1)) == "[2.5;1]");
@@ -46,7 +46,7 @@ int main()
     auto l6 = flist::rev(std::ref(l5));
     assert(flist::as_string(l6) == "[2.5;1;7;5;3]");
 
-    /*auto ll = create_ref(l1, l2, l3, l4);
+    auto ll = create_ref(l1, l2, l3, l4);
     assert(flist::as_string(flist::map(flist::as_string, flist::map(flist::rev, std::ref(ll)))) ==
         "[[2.5;1];[char[];1;2.5];[string;s;c];[]]");
     auto flat_ll = flist::flatten(std::ref(ll));
@@ -62,9 +62,9 @@ int main()
     std::cout << flist::as_string(custom_l) << std::endl;
     assert(flist::as_string(custom_l) == "[This is ;2; ;custom call]");
     assert(flist::as_string(flist::rev(custom_l)) == "[custom call; ;2;This is ]");
-    assert(flist::as_string(flist::rev(flist::rev(custom_l))) == "[This is ;2; ;custom call]");*/
+    assert(flist::as_string(flist::rev(flist::rev(custom_l))) == "[This is ;2; ;custom call]");
 
-/*
+
     constexpr int N = 16;
     std::array<std::vector<int>, N> sets;
     for (int pot2 = 1; pot2 < N; pot2 *= 2)
@@ -78,5 +78,5 @@ int main()
         } (std::make_index_sequence<N>{});
     auto list_of_lists = flist::of_range(std::ref(set_of_lists));
     auto seqN = flist::map([&](auto l) {return l(add, 0);}, flist::rev(std::ref(list_of_lists)));
-    assert(seqN([](int i, int a) {assert(i == a); return a + 1;}, 0) == N);*/
+    assert(seqN([](int i, int a) {assert(i == a); return a + 1;}, 0) == N);
 }
