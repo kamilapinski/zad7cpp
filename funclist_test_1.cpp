@@ -15,11 +15,11 @@
 
 namespace
 {
-    /*template <typename... Args>
+    template <typename... Args>
     auto create_ref(const Args&... args)
     {
         return flist::create(std::ref(args)...);
-    }*/
+    }
 }
 
 int main()
@@ -27,17 +27,23 @@ int main()
     auto add = []<typename A>(auto x, A a) -> A {return x + a;};
     auto l = flist::cons(1, flist::empty);
     auto l1 = flist::cons(1, flist::cons(2.5, flist::empty));
+    std::cout << flist::as_string(l1) << std::endl;
+    std::cout << flist::as_string(flist::rev(l1)) << std::endl;
+    assert(flist::as_string(flist::rev(l1)) == "[2.5;1]");
+    std::cout << flist::as_string(l1) << std::endl;
     assert(flist::as_string(l1) == "[1;2.5]");
     assert(l1(add, 0.0) == 3.5);
     assert(l1(add, 0) == 3);
     auto l2 = flist::rev(flist::cons("char[]", std::ref(l1)));
+    std::cout << flist::as_string(l2) << std::endl;
     assert(flist::as_string(l2) == "[2.5;1;char[]]");
     auto l3 = flist::create('c', "s", std::string("string"));
     auto l4 = flist::empty;
     auto l5 = flist::concat(flist::of_range(std::array{3, 5, 7}), std::ref(l1));
+    std::cout << flist::as_string(l5) << std::endl;
     assert(flist::as_string(l5) == "[3;5;7;1;2.5]");
     assert(l5(add, 0.0) == 18.5);
-    /*auto l6 = flist::rev(std::ref(l5));
+    auto l6 = flist::rev(std::ref(l5));
     assert(flist::as_string(l6) == "[2.5;1;7;5;3]");
 
     auto ll = create_ref(l1, l2, l3, l4);
@@ -52,9 +58,12 @@ int main()
     {
         return f("This is ", f(std::ref(i), f(' ', f("custom call", a))));
     };
+    // tu nie działa
+    std::cout << flist::as_string(custom_l) << std::endl;
     assert(flist::as_string(custom_l) == "[This is ;2; ;custom call]");
     assert(flist::as_string(flist::rev(custom_l)) == "[custom call; ;2;This is ]");
     assert(flist::as_string(flist::rev(flist::rev(custom_l))) == "[This is ;2; ;custom call]");
+
 
     constexpr int N = 16;
     std::array<std::vector<int>, N> sets;
@@ -69,5 +78,5 @@ int main()
         } (std::make_index_sequence<N>{});
     auto list_of_lists = flist::of_range(std::ref(set_of_lists));
     auto seqN = flist::map([&](auto l) {return l(add, 0);}, flist::rev(std::ref(list_of_lists)));
-    assert(seqN([](int i, int a) {assert(i == a); return a + 1;}, 0) == N);*/
+    assert(seqN([](int i, int a) {assert(i == a); return a + 1;}, 0) == N);
 }
