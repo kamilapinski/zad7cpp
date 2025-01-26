@@ -8,15 +8,12 @@
 
 namespace flist {
 
-    // funkcja stała reprezentująca listę pustą
     constexpr auto empty = []([[maybe_unused]] auto f, auto a) {
         return a;
     };
 
-    // funkcja zwracająca listę l z dodanym na jej początek x
     constexpr auto cons = [](auto x, auto l) {
         return [x, l](auto f, auto a) {
-            //return l(f, f(x, a));
             return f(x, l(f, a));
         };
     };
@@ -55,12 +52,10 @@ namespace flist {
         }
     }
 
-    // funkcja zwracająca listę składającą się z podanych argumentów
     constexpr auto create = [](auto... args) {
         return detail::build_list(args...);
     };
 
-    // funkcja zwracająca listę powstałą z elementów r; można założyć, że r jest typu spełniającego koncept std::ranges::bidirectional_range ewentualnie opakowanego w std::reference_wrapper
     constexpr auto of_range = [](auto r) {
         auto v = detail::r_to_vector(r);
 
@@ -71,7 +66,6 @@ namespace flist {
         };
     };
 
-    // funkcja zwracająca listę powstałą z połączenia list l i k
     constexpr auto concat = [](auto l, auto k) {
         return [=](auto f, auto acc) {
             auto tmp = k(f, acc);
@@ -79,34 +73,22 @@ namespace flist {
         };
     };
     
-    // funkcja zwracająca listę z odwróconą kolejnością elementów listy l
-    // Remove std::function from rev:
     constexpr auto rev = [](auto l) {
         return [=](auto f, auto a) {
-            // A is the type of 'a'
             using A = decltype(a);
-
-            // Fold over the list l, building up std::function<A(A)>
-            std::function<A(A)> agg =
+            std::function<A(A)> acc =
                 l(
-                    // For each element x, update the accumulator
-                    [=](auto x, std::function<A(A)> oldAgg) -> std::function<A(A)> {
-                        // Return a new function from A -> A
+                    [=](auto x, std::function<A(A)> old_acc) -> std::function<A(A)> {
                         return [=](A current) -> A {
-                            // Apply f(x, ...) then feed into oldAgg
-                            return oldAgg(f(x, current));
+                            return old_acc(f(x, current));
                         };
                     },
-                    // Start with identity
                     std::function<A(A)>([](A init) { return init; })
                 );
-
-            // Finally, apply that function to 'a'
-            return agg(a);
+            return acc(a);
         };
     };
 
-    // funkcja zwracająca listę powstałą z listy l w taki sposób, że każdy jej element x zamieniany jest na m(x)
     constexpr auto map = [](auto m, auto l) {
         return [=](auto f, auto acc) {
             return l([&](auto x, auto acc_next) {
@@ -115,7 +97,6 @@ namespace flist {
         };
     };
 
-    // funkcja zwracająca listę powstałą z listy l poprzez zostawienie tylko takich elementów x, które spełniają predykat p(x)
     constexpr auto filter = [](auto p, auto l) {
         return [=](auto f, auto acc) {
             return l([&](auto x, auto acc_next) {
@@ -126,7 +107,6 @@ namespace flist {
         };
     };
 
-    // funkcja zwracająca listę powstałą z połączenia list pamiętanych w liście list l
     constexpr auto flatten = [](auto l) {
         return [=](auto f, auto acc) {
             return l(
@@ -137,8 +117,6 @@ namespace flist {
             );
         };
     };
-    
-    // funkcja zwracająca reprezentację listy l jako std::string przy założeniu, że dla każdego elementu listy x działa os << x, gdzie os jest obiektem pochodnym basic_ostream; patrz przykłady użycia
 
     constexpr auto as_string = [](const auto& l) -> std::string {
         auto fold_function = [&](const auto& x, const std::string& acc) -> std::string {
@@ -153,10 +131,8 @@ namespace flist {
             }
         };
 
-        // Perform foldr to accumulate the string
         std::string result = detail::foldr(l, fold_function, std::string(""));
 
-        // Enclose the result within square brackets
         return "[" + result + "]";
     };
 
