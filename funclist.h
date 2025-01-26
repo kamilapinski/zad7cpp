@@ -42,6 +42,17 @@ namespace flist {
                 return f(x, acc);
             }, a);
         };
+
+        constexpr auto r_to_vector(auto r) {
+            using value_t = std::decay_t<decltype(*r.begin())>;
+            std::vector<value_t> v(r.begin(), r.end());
+            return v;
+        };
+
+        template <typename R>
+        constexpr auto r_to_vector(std::reference_wrapper<R> r) {
+            return r_to_vector(r.get());
+        }
     }
 
     // funkcja zwracająca listę składającą się z podanych argumentów
@@ -51,13 +62,11 @@ namespace flist {
 
     // funkcja zwracająca listę powstałą z elementów r; można założyć, że r jest typu spełniającego koncept std::ranges::bidirectional_range ewentualnie opakowanego w std::reference_wrapper
     constexpr auto of_range = [](auto r) {
-        using value_t = std::decay_t<decltype(*r.begin())>;
-        std::vector<value_t> v(r.begin(), r.end());
-        std::reverse(v.begin(), v.end());
+        auto v = detail::r_to_vector(r);
 
         return [v = std::move(v)](auto f, auto acc) {
-            for (auto const& elt : v)
-                acc = f(elt, acc);
+            for(auto it = v.rbegin(); it != v.rend(); ++it)
+                acc = f(*it, acc);
             return acc;
         };
     };
