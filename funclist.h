@@ -16,8 +16,8 @@ namespace flist {
     // funkcja zwracająca listę l z dodanym na jej początek x
     constexpr auto cons = [](auto x, auto l) {
         return [x, l](auto f, auto a) {
-            return l(f, f(x, a));
-            //return f(x, l(f, a));
+            //return l(f, f(x, a));
+            return f(x, l(f, a));
         };
     };
 
@@ -31,6 +31,17 @@ namespace flist {
                 return cons(std::forward<X>(x), build_list(std::forward<Args>(args)...));
         }
 
+        constexpr auto foldl = [](auto l, auto f, auto a) -> decltype(auto) {
+            return l([&](auto x, auto acc) -> decltype(auto) {
+                return f(acc, x);
+            }, a);
+        };
+
+        constexpr auto foldr = [](auto l, auto f, auto a) -> decltype(auto) {
+            return l([&](auto x, auto acc) -> decltype(auto) {
+                return f(x, acc);
+            }, a);
+        };
     }
 
     // funkcja zwracająca listę składającą się z podanych argumentów
@@ -53,26 +64,35 @@ namespace flist {
     // funkcja zwracająca listę powstałą z połączenia list l i k
     constexpr auto concat = [](auto l, auto k) {
         return [=](auto f, auto acc) {
-            auto tmp = l(f, acc);
-            return k(f, tmp);
+            auto tmp = k(f, acc);
+            return l(f, tmp);
         };
     };
     
     // funkcja zwracająca listę z odwróconą kolejnością elementów listy l
+    // Remove std::function from rev:
     constexpr auto rev = [](auto l) {
-        return [l](auto f, auto a) {
+        return [=](auto f, auto a) {
+            // A is the type of 'a'
             using A = decltype(a);
 
-            std::function<A(A)> acc = l(
-                [&](auto x, std::function<A(A)> prev) {
-                    return [=, &f](A a0) {
-                        return prev(f(x, a0));
-                    };
-                },
-                std::function<A(A)>([](A a0){ return a0; })
-            );
+            // Fold over the list l, building up std::function<A(A)>
+            std::function<A(A)> agg =
+                l(
+                    // For each element x, update the accumulator
+                    [=](auto x, std::function<A(A)> oldAgg) -> std::function<A(A)> {
+                        // Return a new function from A -> A
+                        return [=](A current) -> A {
+                            // Apply f(x, ...) then feed into oldAgg
+                            return oldAgg(f(x, current));
+                        };
+                    },
+                    // Start with identity
+                    std::function<A(A)>([](A init) { return init; })
+                );
 
-            return acc(a);
+            // Finally, apply that function to 'a'
+            return agg(a);
         };
     };
 
@@ -109,22 +129,25 @@ namespace flist {
     };
     
     // funkcja zwracająca reprezentację listy l jako std::string przy założeniu, że dla każdego elementu listy x działa os << x, gdzie os jest obiektem pochodnym basic_ostream; patrz przykłady użycia
+
     constexpr auto as_string = [](const auto& l) -> std::string {
-        std::stringstream ss;
-        ss << '[';
+        auto fold_function = [&](const auto& x, const std::string& acc) -> std::string {
+            std::stringstream ss;
+            ss << x;
+            std::string x_str = ss.str();
 
-        l([&ss](const auto& x, const auto& next) {
-            ss << x << ';';
-            return next;
-        }, empty);
+            if (acc.empty()) {
+                return x_str;
+            } else {
+                return x_str + ";" + acc;
+            }
+        };
 
-        auto str = ss.str();
-        if (str.size() > 1)
-            str.pop_back();
-        
-        return str + ']';
+        // Perform foldr to accumulate the string
+        std::string result = detail::foldr(l, fold_function, std::string(""));
 
-        return str;
+        // Enclose the result within square brackets
+        return "[" + result + "]";
     };
 
 };
