@@ -25,22 +25,15 @@ namespace
 int main()
 {
     auto add = []<typename A>(auto x, A a) -> A {return x + a;};
-    auto l = flist::cons(1, flist::empty);
     auto l1 = flist::cons(1, flist::cons(2.5, flist::empty));
-    std::cout << flist::as_string(l1) << std::endl;
-    std::cout << flist::as_string(flist::rev(l1)) << std::endl;
-    assert(flist::as_string(flist::rev(l1)) == "[2.5;1]");
-    std::cout << flist::as_string(l1) << std::endl;
     assert(flist::as_string(l1) == "[1;2.5]");
     assert(l1(add, 0.0) == 3.5);
     assert(l1(add, 0) == 3);
     auto l2 = flist::rev(flist::cons("char[]", std::ref(l1)));
-    std::cout << flist::as_string(l2) << std::endl;
     assert(flist::as_string(l2) == "[2.5;1;char[]]");
     auto l3 = flist::create('c', "s", std::string("string"));
     auto l4 = flist::empty;
     auto l5 = flist::concat(flist::of_range(std::array{3, 5, 7}), std::ref(l1));
-    std::cout << flist::as_string(l5) << std::endl;
     assert(flist::as_string(l5) == "[3;5;7;1;2.5]");
     assert(l5(add, 0.0) == 18.5);
     auto l6 = flist::rev(std::ref(l5));
@@ -58,12 +51,9 @@ int main()
     {
         return f("This is ", f(std::ref(i), f(' ', f("custom call", a))));
     };
-    // tu nie działa
-    std::cout << flist::as_string(custom_l) << std::endl;
     assert(flist::as_string(custom_l) == "[This is ;2; ;custom call]");
     assert(flist::as_string(flist::rev(custom_l)) == "[custom call; ;2;This is ]");
     assert(flist::as_string(flist::rev(flist::rev(custom_l))) == "[This is ;2; ;custom call]");
-
 
     constexpr int N = 16;
     std::array<std::vector<int>, N> sets;

@@ -2,8 +2,6 @@
 #define FUNCLIST_H
 
 #include <functional>
-#include <iostream>
-#include <string>
 #include <sstream>
 
 namespace flist {
@@ -28,18 +26,6 @@ namespace flist {
                 return cons(std::forward<X>(x), build_list(std::forward<Args>(args)...));
         }
 
-        constexpr auto foldl = [](auto l, auto f, auto a) -> decltype(auto) {
-            return l([&](auto x, auto acc) -> decltype(auto) {
-                return f(acc, x);
-            }, a);
-        };
-
-        constexpr auto foldr = [](auto l, auto f, auto a) -> decltype(auto) {
-            return l([&](auto x, auto acc) -> decltype(auto) {
-                return f(x, acc);
-            }, a);
-        };
-
         constexpr auto r_to_vector(auto r) {
             using value_t = std::decay_t<decltype(*r.begin())>;
             std::vector<value_t> v(r.begin(), r.end());
@@ -50,6 +36,7 @@ namespace flist {
         constexpr auto r_to_vector(std::reference_wrapper<R> r) {
             return r_to_vector(r.get());
         }
+
     }
 
     constexpr auto create = [](auto... args) {
@@ -68,8 +55,7 @@ namespace flist {
 
     constexpr auto concat = [](auto l, auto k) {
         return [=](auto f, auto acc) {
-            auto tmp = k(f, acc);
-            return l(f, tmp);
+            return l(f, k(f, acc));
         };
     };
     
@@ -110,8 +96,8 @@ namespace flist {
     constexpr auto flatten = [](auto l) {
         return [=](auto f, auto acc) {
             return l(
-                [&](auto sublist, auto currentAcc) {
-                    return sublist(f, currentAcc);
+                [&](auto sublist, auto curr_acc) {
+                    return sublist(f, curr_acc);
                 },
                 acc
             );
@@ -119,21 +105,21 @@ namespace flist {
     };
 
     constexpr auto as_string = [](const auto& l) -> std::string {
-        auto fold_function = [&](const auto& x, const std::string& acc) -> std::string {
+        auto right_fold = [](auto l, auto f, auto a) {
+            return l([=](auto x, auto acc) {
+                return f(x, acc);
+            }, a);
+        };
+
+        auto to_ss = [&](const auto& x, const std::string& acc) -> std::string {
             std::stringstream ss;
             ss << x;
             std::string x_str = ss.str();
 
-            if (acc.empty()) {
-                return x_str;
-            } else {
-                return x_str + ";" + acc;
-            }
+            return (acc.empty()) ? x_str : x_str + ";" + acc;
         };
 
-        std::string result = detail::foldr(l, fold_function, std::string(""));
-
-        return "[" + result + "]";
+        return "[" + right_fold(l, to_ss, std::string("")) + "]";
     };
 
 };
